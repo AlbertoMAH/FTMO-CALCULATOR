@@ -22,28 +22,23 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Install dependencies
+      - name: Repair and Build
         run: |
-          # Cherche le pubspec.yaml et installe les dépendances là où il se trouve
+          # 1. On se place là où est le projet
           cd $(find . -name pubspec.yaml -exec dirname {} \;)
-          flutter pub get
-
-      - name: Clean and Build
-        run: |
-          # 1. On trouve le dossier android
-          ANDROID_DIR=$(find . -name android -type d -print -quit)
-          PROJECT_ROOT=$(dirname $ANDROID_DIR)
           
-          cd $PROJECT_ROOT
+          # 2. On force Flutter à recréer les fichiers Android manquants (comme gradlew)
+          flutter create . --platforms android
           
-          # 2. Nettoyage des scories locales
+          # 3. On nettoie les résidus
           rm -f android/local.properties
           [ -f android/gradle.properties ] && sed -i '/org.gradle.java.home/d' android/gradle.properties || true
           
-          # 3. Rendre gradlew exécutable
+          # 4. On s'assure que c'est exécutable
           chmod +x android/gradlew
           
-          # 4. Lancement du Build Release
+          # 5. Build
+          flutter pub get
           flutter config --jdk-dir $JAVA_HOME
           flutter build apk --release --split-per-abi
 
