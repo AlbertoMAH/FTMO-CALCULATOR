@@ -1,0 +1,48 @@
+name: Flutter Build APK
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Clean Android Environment
+        run: |
+          # On supprime les fichiers de config locaux pour forcer GitHub à utiliser les siens
+          rm -f android/local.properties
+          # On nettoie gradle.properties de toute configuration de chemin forcée
+          sed -i '/org.gradle.java.home/d' android/gradle.properties || true
+          
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build APK (Release)
+        run: |
+          flutter config --jdk-dir $JAVA_HOME
+          flutter build apk --release --split-per-abi
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-release-apk
+          path: build/app/outputs/flutter-apk/*.apk
+
