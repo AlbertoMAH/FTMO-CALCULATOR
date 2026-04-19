@@ -23,20 +23,27 @@ jobs:
           channel: 'stable'
 
       - name: Install dependencies
-        run: flutter pub get
-
-      - name: Clean Android Environment
         run: |
-          # On supprime les fichiers de config locaux pour forcer GitHub à utiliser les siens
-          rm -f android/local.properties
-          # On nettoie gradle.properties de toute configuration de chemin forcée
-          sed -i '/org.gradle.java.home/d' android/gradle.properties || true
+          # Cherche le pubspec.yaml et installe les dépendances là où il se trouve
+          cd $(find . -name pubspec.yaml -exec dirname {} \;)
+          flutter pub get
+
+      - name: Clean and Build
+        run: |
+          # 1. On trouve le dossier android
+          ANDROID_DIR=$(find . -name android -type d -print -quit)
+          PROJECT_ROOT=$(dirname $ANDROID_DIR)
           
-      - name: Make gradlew executable
-        run: chmod +x android/gradlew
-
-      - name: Build APK (Release)
-        run: |
+          cd $PROJECT_ROOT
+          
+          # 2. Nettoyage des scories locales
+          rm -f android/local.properties
+          [ -f android/gradle.properties ] && sed -i '/org.gradle.java.home/d' android/gradle.properties || true
+          
+          # 3. Rendre gradlew exécutable
+          chmod +x android/gradlew
+          
+          # 4. Lancement du Build Release
           flutter config --jdk-dir $JAVA_HOME
           flutter build apk --release --split-per-abi
 
@@ -44,5 +51,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: flutter-release-apk
-          path: build/app/outputs/flutter-apk/*.apk
+          path: "**/build/app/outputs/flutter-apk/*.apk"
 
