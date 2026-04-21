@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lot Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+/* ══ THEMES ══════════════════════════════════════ */
+:root {
+  --bg: #f0f2f5;
+  --panel: #ffffff;
+  --border: #e1e5eb;
+  --border-hover: #c8cdd6;
+  --btc: #e8820c;
+  --eth: #4a6bd6;
+  --green: #0a9e5c;
+  --red: #d92d44;
+  --orange: #d97706;
+  --text: #0d1117;
+  --muted: #7a8499;
+  --input-bg: rgba(0,0,0,0.03);
+  --placeholder: #c0c7d4;
+  --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  --glow-btc: 0 0 20px rgba(232,130,12,0.18);
+  --glow-eth: 0 0 20px rgba(74,107,214,0.18);
+  --active-btc-bg: rgba(232,130,12,0.07);
+  --active-eth-bg: rgba(74,107,214,0.07);
+  --sl-border: rgba(217,45,68,0.3);
+  --tp-border: rgba(10,158,92,0.3);
+  --warn-bg: rgba(180,130,0,0.07);
+  --warn-border: rgba(180,130,0,0.25);
+  --warn-color: #8a6500;
+  --err-bg: rgba(217,45,68,0.07);
+  --err-border: rgba(217,45,68,0.3);
+  --result-item-bg: rgba(0,0,0,0.025);
+  --section-sep: rgba(0,0,0,0.06);
+  --exness: #00b341;
+  --exness-dim: rgba(0,179,65,0.07);
+  --exness-border: rgba(0,179,65,0.3);
+  --exness-glow: 0 0 18px rgba(0,179,65,0.18);
+  --sheet-bg: #ffffff;
+  --overlay: rgba(0,0,0,0.45);
+  --handle: #d0d5de;
+  --ftmo-tag: #e8820c;
+}
+
+[data-theme="dark"] {
+  --bg: #080c10;
+  --panel: #0d1117;
+  --border: #1c2333;
+  --border-hover: #3a4455;
+  --btc: #f7931a;
+  --eth: #627eea;
+  --green: #00e676;
+  --red: #ff3d57;
+  --orange: #fb923c;
+  --text: #e6edf3;
+  --muted: #6e7681;
+  --input-bg: rgba(255,255,255,0.03);
+  --placeholder: #2d333b;
+  --shadow: 0 2px 16px rgba(0,0,0,0.5);
+  --glow-btc: 0 0 24px rgba(247,147,26,0.25);
+  --glow-eth: 0 0 24px rgba(98,126,234,0.25);
+  --active-btc-bg: rgba(247,147,26,0.06);
+  --active-eth-bg: rgba(98,126,234,0.06);
+  --sl-border: rgba(255,61,87,0.25);
+  --tp-border: rgba(0,230,118,0.2);
+  --warn-bg: rgba(255,193,7,0.06);
+  --warn-border: rgba(255,193,7,0.2);
+  --warn-color: #ffc107;
+  --err-bg: rgba(255,61,87,0.08);
+  --err-border: rgba(255,61,87,0.3);
+  --result-item-bg: rgba(255,255,255,0.03);
+  --section-sep: rgba(255,255,255,0.06);
+  --exness: #00e676;
+  --exness-dim: rgba(0,230,118,0.06);
+  --exness-border: rgba(0,230,118,0.25);
+  --exness-glow: 0 0 18px rgba(0,230,118,0.18);
+  --sheet-bg: #0d1117;
+  --overlay: rgba(0,0,0,0.7);
+  --handle: #2a3445;
+  --ftmo-tag: #f7931a;
+}
+
+/* ══ BASE ════════════════════════════════════════ */
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  min-height: 100vh;
+  padding: 20px 16px 32px;
+  overflow-x: hidden;
+  transition: background .35s, color .35s;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(74,107,214,.05), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 80%,  rgba(232,130,12,.04), transparent);
+  pointer-events: none; z-index: 0;
+}
+
+.main { max-width: 440px; margin: 0 auto; position: relative; z-index: 1; }
+
+/* ══ TOP BAR ═════════════════════════════════════ */
+.top-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px;
+}
+.top-bar-left { display: flex; align-items: center; gap: 8px; }
+.app-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px; font-weight: 700;
+  color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase;
+}
+
+.theme-toggle { display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none; }
+.t-icon { font-size:13px; line-height:1; }
+.toggle-track {
+  width:42px; height:23px; background:#dde1ea;
+  border-radius:100px; position:relative;
+  transition:background .3s; border:1px solid var(--border);
+}
+[data-theme="dark"] .toggle-track { background:#2a3a5a; }
+.toggle-thumb {
+  position:absolute; top:3px; left:3px;
+  width:15px; height:15px; border-radius:50%;
+  background:#fff; box-shadow:0 1px 5px rgba(0,0,0,.2);
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1), background .3s;
+}
+[data-theme="dark"] .toggle-thumb { transform:translateX(19px); background:#627eea; }
+
+/* ══ HEADER ══════════════════════════════════════ */
+.header { text-align:center; margin-bottom:18px; }
+.badge {
+  display:inline-flex; align-items:center; gap:6px;
+  background:var(--input-bg); border:1px solid var(--border);
+  border-radius:100px; padding:5px 14px;
+  font-family:'Space Mono',monospace;
+  font-size:10px; color:var(--muted);
+  letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px;
+}
+.badge::before {
+  content:''; width:6px; height:6px; border-radius:50%;
+  background:var(--green); box-shadow:0 0 8px var(--green);
+  animation:pulse 2s infinite;
+}
+h1 { font-size:26px; font-weight:800; letter-spacing:-.5px; line-height:1.1; }
+h1 .accent { color:var(--btc); }
+.header p { color:var(--muted); font-size:12px; margin-top:5px; font-family:'Space Mono',monospace; }
+
+/* ══ EXNESS CAPITAL CARD ═════════════════════════ */
+.account-card {
+  background: var(--exness-dim);
+  border: 1.5px solid var(--exness-border);
+  border-radius: 14px; padding: 14px 16px; margin-bottom: 10px;
+  box-shadow: var(--exness-glow);
+}
+.account-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.account-card-title {
+  font-size: 10px; font-weight: 700; color: var(--exness);
+  text-transform: uppercase; letter-spacing: 1.5px;
+  font-family: 'Space Mono', monospace;
+}
+.risk-pill {
+  background: var(--exness); color: #fff;
+  border-radius: 100px; padding: 2px 10px;
+  font-size: 10px; font-weight: 700;
+  font-family: 'Space Mono', monospace; letter-spacing: .5px;
+}
+.account-row {
+  display:flex; align-items:center; gap:10px;
+  background:var(--input-bg); border:1px solid var(--exness-border);
+  border-radius:10px; padding:0 14px;
+  transition:border-color .2s;
+}
+.account-row:focus-within { border-color:var(--exness); }
+.account-row label { font-size:11px; color:var(--muted); font-family:'Space Mono',monospace; white-space:nowrap; }
+.account-row input {
+  flex:1; background:none; border:none; outline:none;
+  color:var(--text); font-family:'Space Mono',monospace;
+  font-size:15px; padding:13px 0; text-align:right;
+}
+.account-row input::placeholder { color:var(--placeholder); }
+.account-tag { font-size:10px; color:var(--muted); font-family:'Space Mono',monospace; }
+.risk-computed {
+  margin-top:8px; font-size:11px;
+  font-family:'Space Mono',monospace; color:var(--exness);
+  text-align:right;
+}
+
+/* ══ ASSET SELECTOR ══════════════════════════════ */
+.swipe-hint {
+  text-align:center; font-size:10px; color:var(--muted);
+  font-family:'Space Mono',monospace; letter-spacing:1px;
+  margin-bottom:8px; opacity:.7;
+}
+.asset-selector { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+.asset-btn {
+  background:var(--panel); border:1.5px solid var(--border);
+  border-radius:12px; padding:14px;
+  cursor:pointer; transition:all .2s ease;
+  display:flex; align-items:center; gap:10px;
+  font-family:'Syne',sans-serif; box-shadow:var(--shadow);
+}
+.asset-btn:hover { border-color:var(--border-hover); }
+.asset-btn.active[data-asset="BTC"] { border-color:var(--btc); background:var(--active-btc-bg); box-shadow:var(--glow-btc); }
+.asset-btn.active[data-asset="ETH"] { border-color:var(--eth); background:var(--active-eth-bg); box-shadow:var(--glow-eth); }
+.asset-icon { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; flex-shrink:0; }
+.btc-icon { background:rgba(232,130,12,.13); color:var(--btc); }
+.eth-icon { background:rgba(74,107,214,.13); color:var(--eth); }
+.asset-info { text-align:left; }
+.asset-name { font-size:15px; font-weight:700; color:var(--text); }
+.asset-sub  { font-size:10px; color:var(--muted); font-family:'Space Mono',monospace; }
+
+/* ══ CARD / INPUTS ═══════════════════════════════ */
+.card {
+  background:var(--panel); border:1px solid var(--border);
+  border-radius:16px; padding:18px; margin-bottom:10px;
+  box-shadow:var(--shadow); transition:background .35s, border-color .35s;
+}
+.card-title { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:12px; font-family:'Space Mono',monospace; }
+.input-group { display:flex; flex-direction:column; gap:9px; }
+.input-row {
+  display:flex; align-items:center; gap:10px;
+  background:var(--input-bg); border:1px solid var(--border);
+  border-radius:10px; padding:0 14px;
+  transition:border-color .2s, background .35s;
+}
+.input-row:focus-within { border-color:var(--border-hover); }
+.input-row label { font-size:11px; color:var(--muted); font-family:'Space Mono',monospace; white-space:nowrap; min-width:34px; }
+.input-row input {
+  flex:1; background:none; border:none; outline:none;
+  color:var(--text); font-family:'Space Mono',monospace;
+  font-size:15px; padding:12px 0; text-align:right; transition:color .35s;
+}
+.input-row input::placeholder { color:var(--placeholder); }
+.input-tag { font-size:10px; color:var(--muted); font-family:'Space Mono',monospace; }
+.sl-row .input-row { border-color:var(--sl-border); }
+.sl-row .input-row:focus-within { border-color:var(--red); }
+.tp-row .input-row { border-color:var(--tp-border); }
+.tp-row .input-row:focus-within { border-color:var(--green); }
+
+/* ══ ERROR ═══════════════════════════════════════ */
+.error-msg {
+  background:var(--err-bg); border:1px solid var(--err-border);
+  border-radius:10px; padding:11px 16px; color:var(--red);
+  font-size:12px; font-family:'Space Mono',monospace;
+  text-align:center; display:none; margin-bottom:10px;
+}
+.error-msg.visible { display:block; animation:fadeUp .3s ease both; }
+
+/* ══ BUTTONS ═════════════════════════════════════ */
+.btn-row { display:flex; gap:8px; margin-bottom:10px; }
+
+.calc-btn {
+  flex:1; padding:15px; border:none; border-radius:12px;
+  font-family:'Syne',sans-serif; font-size:15px; font-weight:800;
+  letter-spacing:.5px; cursor:pointer; transition:all .2s ease;
+}
+.calc-btn[data-asset="BTC"] { background:linear-gradient(135deg,#f7931a,#df7a08); color:#fff; box-shadow:0 4px 18px rgba(247,147,26,.35); }
+.calc-btn[data-asset="ETH"] { background:linear-gradient(135deg,#627eea,#4a63c8); color:#fff; box-shadow:0 4px 18px rgba(98,126,234,.35); }
+.calc-btn:hover  { transform:translateY(-1px); filter:brightness(1.08); }
+.calc-btn:active { transform:translateY(0); }
+
+.clear-btn {
+  padding:15px 18px; border-radius:12px; border:1.5px solid var(--border);
+  background:transparent; color:var(--muted);
+  font-family:'Space Mono',monospace; font-size:12px; font-weight:700;
+  cursor:pointer; transition:all .2s ease; white-space:nowrap;
+}
+.clear-btn:hover  { border-color:var(--red); color:var(--red); background:var(--err-bg); }
+.clear-btn:active { transform:scale(.97); }
+
+/* ══ BOTTOM SHEET ════════════════════════════════ */
+.overlay {
+  position:fixed; inset:0;
+  background:var(--overlay);
+  z-index:200;
+  opacity:0; pointer-events:none;
+  transition:opacity .35s ease;
+}
+.overlay.visible { opacity:1; pointer-events:all; }
+
+.sheet {
+  position:fixed;
+  left:0; right:0; bottom:0;
+  background:var(--sheet-bg);
+  border-radius:20px 20px 0 0;
+  z-index:201;
+  max-height:92vh;
+  display:flex; flex-direction:column;
+  transform:translateY(100%);
+  transition:transform .4s cubic-bezier(.32,1,.34,1);
+  box-shadow:0 -8px 40px rgba(0,0,0,.18);
+}
+.sheet.open { transform:translateY(0); }
+
+.sheet-handle-area {
+  padding:12px 0 6px;
+  display:flex; justify-content:center;
+  cursor:grab; flex-shrink:0;
+}
+.sheet-handle-area:active { cursor:grabbing; }
+.sheet-handle {
+  width:40px; height:4px; border-radius:100px;
+  background:var(--handle);
+}
+
+.sheet-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 20px 14px; flex-shrink:0;
+  border-bottom:1px solid var(--border);
+}
+.sheet-title {
+  font-size:14px; font-weight:800; letter-spacing:-.3px;
+}
+.sheet-asset-badge {
+  font-family:'Space Mono',monospace; font-size:11px; font-weight:700;
+  padding:3px 12px; border-radius:100px; border:1.5px solid;
+}
+.sheet-asset-badge.btc { color:var(--btc); border-color:var(--btc); background:rgba(232,130,12,.08); }
+.sheet-asset-badge.eth { color:var(--eth); border-color:var(--eth); background:rgba(74,107,214,.08); }
+
+.sheet-close {
+  width:28px; height:28px; border-radius:50%;
+  background:var(--input-bg); border:1px solid var(--border);
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-size:14px; color:var(--muted); transition:all .2s;
+}
+.sheet-close:hover { background:var(--err-bg); color:var(--red); border-color:var(--red); }
+
+.sheet-body {
+  overflow-y:auto; flex:1; padding:16px 16px 32px;
+  -webkit-overflow-scrolling:touch;
+}
+
+/* ── BROKER BLOCKS ── */
+.broker-block { margin-bottom:16px; }
+.broker-block:last-child { margin-bottom:0; }
+
+.broker-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:12px;
+}
+.broker-name {
+  display:flex; align-items:center; gap:8px;
+  font-size:13px; font-weight:800; letter-spacing:-.2px;
+}
+.broker-dot {
+  width:8px; height:8px; border-radius:50%;
+}
+.broker-dot.ftmo   { background:var(--ftmo-tag); box-shadow:0 0 8px var(--ftmo-tag); }
+.broker-dot.exness { background:var(--exness);   box-shadow:0 0 8px var(--exness); }
+
+.rr-score {
+  display:inline-flex; align-items:center; gap:5px;
+  border-radius:100px; padding:3px 12px;
+  font-size:11px; font-weight:700; font-family:'Space Mono',monospace;
+  border:1.5px solid; transition:all .3s;
+}
+.rr-score.bad    { background:rgba(217,45,68,.08);  border-color:rgba(217,45,68,.35);  color:var(--red); }
+.rr-score.medium { background:rgba(217,119,6,.08);  border-color:rgba(217,119,6,.35);  color:var(--orange); }
+.rr-score.good   { background:rgba(10,158,92,.08);  border-color:rgba(10,158,92,.35);  color:var(--green); }
+[data-theme="dark"] .rr-score.bad    { background:rgba(255,61,87,.08);  border-color:rgba(255,61,87,.3); }
+[data-theme="dark"] .rr-score.medium { background:rgba(251,146,60,.08); border-color:rgba(251,146,60,.3); }
+[data-theme="dark"] .rr-score.good   { background:rgba(0,230,118,.08);  border-color:rgba(0,230,118,.3); }
+
+/* LOT display */
+.lot-hero {
+  background:var(--result-item-bg); border:1px solid var(--border);
+  border-radius:14px; padding:14px 16px; margin-bottom:10px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.lot-hero-left .lot-lbl { font-size:9px; color:var(--muted); font-family:'Space Mono',monospace; text-transform:uppercase; letter-spacing:1px; margin-bottom:2px; }
+.lot-hero-left .lot-num { font-size:38px; font-weight:800; font-family:'Space Mono',monospace; line-height:1; }
+.lot-hero-left .lot-num.btc { color:var(--btc); }
+.lot-hero-left .lot-num.eth { color:var(--eth); }
+.lot-hero-left .lot-sub { font-size:10px; color:var(--muted); font-family:'Space Mono',monospace; margin-top:2px; }
+.lot-hero-right { text-align:right; }
+.lot-hero-right .risk-lbl { font-size:9px; color:var(--muted); font-family:'Space Mono',monospace; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+.lot-hero-right .risk-amt { font-size:18px; font-weight:800; font-family:'Space Mono',monospace; color:var(--red); }
+.lot-hero-right .gain-amt { font-size:18px; font-weight:800; font-family:'Space Mono',monospace; color:var(--green); }
+
+/* Mini grid */
+.mini-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:7px; margin-bottom:10px; }
+.mini-item {
+  background:var(--result-item-bg); border:1px solid var(--border);
+  border-radius:10px; padding:10px 10px;
+}
+.mini-lbl { font-size:9px; color:var(--muted); font-family:'Space Mono',monospace; text-transform:uppercase; letter-spacing:.8px; margin-bottom:3px; }
+.mini-val { font-size:13px; font-weight:700; font-family:'Space Mono',monospace; color:var(--text); }
+.mini-val.pos { color:var(--green); }
+.mini-val.neg { color:var(--red); }
+.mini-val.ora { color:var(--orange); }
+
+/* Separator */
+.broker-sep {
+  display:flex; align-items:center; gap:10px;
+  margin:16px 0;
+}
+.broker-sep-line { flex:1; height:1px; background:var(--border); }
+.broker-sep-text { font-size:10px; color:var(--muted); font-family:'Space Mono',monospace; letter-spacing:1px; white-space:nowrap; }
+
+/* Warn / info */
+.mini-warn {
+  border-radius:10px; padding:9px 12px;
+  font-size:10px; font-family:'Space Mono',monospace; line-height:1.5;
+  display:none; margin-top:8px;
+}
+.mini-warn.swap  { background:var(--warn-bg); border:1px solid var(--warn-border); color:var(--warn-color); }
+.mini-warn.comm  { background:var(--exness-dim); border:1px solid var(--exness-border); color:var(--exness); }
+.mini-warn.visible { display:block; }
+
+/* ══ ANIMATIONS ══════════════════════════════════ */
+@keyframes fadeUp   { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+@keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:.35} }
+@keyframes slideLeft  { from{opacity:0;transform:translateX(40px)}  to{opacity:1;transform:translateX(0)} }
+@keyframes slideRight { from{opacity:0;transform:translateX(-40px)} to{opacity:1;transform:translateX(0)} }
+.swipe-left  { animation:slideLeft  .3s ease both; }
+.swipe-right { animation:slideRight .3s ease both; }
+</style>
+</head>
+<body>
+<div class="main">
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <span class="app-label">Lot Calculator</span>
+    </div>
+    <div class="theme-toggle" onclick="toggleTheme()">
+      <span class="t-icon">☀️</span>
+      <div class="toggle-track"><div class="toggle-thumb"></div></div>
+      <span class="t-icon">🌙</span>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="badge">FTMO 10K · Exness Raw</div>
+    <h1>LOT <span class="accent">CALCULATOR</span></h1>
+    <p>Saisis une fois · résultats pour les deux brokers</p>
+  </div>
+
+  <!-- EXNESS CAPITAL -->
+  <div class="account-card">
+    <div class="account-card-header">
+      <div class="account-card-title">⚡ Capital Exness</div>
+      <div class="risk-pill">1% RISK</div>
+    </div>
+    <div class="account-row">
+      <label>CAPITAL</label>
+      <input type="number" id="account" placeholder="200" value="200" step="1" inputmode="decimal" oninput="updateRiskDisplay()">
+      <span class="account-tag">USD</span>
+    </div>
+    <div class="risk-computed" id="risk-display">Risque Exness : $2.00</div>
+  </div>
+
+  <!-- ASSET SELECTOR -->
+  <div class="swipe-hint">← Swipe pour changer d'asset →</div>
+  <div class="asset-selector" id="asset-selector">
+    <button class="asset-btn active" data-asset="BTC" onclick="selectAsset('BTC')">
+      <div class="asset-icon btc-icon">₿</div>
+      <div class="asset-info">
+        <div class="asset-name">Bitcoin</div>
+        <div class="asset-sub">BTCUSD</div>
+      </div>
+    </button>
+    <button class="asset-btn" data-asset="ETH" onclick="selectAsset('ETH')">
+      <div class="asset-icon eth-icon">Ξ</div>
+      <div class="asset-info">
+        <div class="asset-name">Ethereum</div>
+        <div class="asset-sub">ETHUSD</div>
+      </div>
+    </button>
+  </div>
+
+  <!-- INPUTS -->
+  <div class="card">
+    <div class="card-title">Prix d'entrée</div>
+    <div class="input-group">
+      <div class="input-row">
+        <label>ENTRY</label>
+        <input type="number" id="entry" placeholder="0.00" step="0.01" inputmode="decimal">
+        <span class="input-tag">USD</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Stop Loss &amp; Take Profit</div>
+    <div class="input-group">
+      <div class="sl-row">
+        <div class="input-row">
+          <label>SL</label>
+          <input type="number" id="sl" placeholder="0.00" step="0.01" inputmode="decimal">
+          <span class="input-tag">USD</span>
+        </div>
+      </div>
+      <div class="tp-row">
+        <div class="input-row">
+          <label>TP</label>
+          <input type="number" id="tp" placeholder="0.00" step="0.01" inputmode="decimal">
+          <span class="input-tag">USD</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-msg" id="error-msg"></div>
+
+  <!-- ACTION BUTTONS -->
+  <div class="btn-row">
+    <button class="calc-btn" id="calc-btn" data-asset="BTC" onclick="calculate()">
+      CALCULER
+    </button>
+    <button class="clear-btn" onclick="clearFields()">✕ Clear</button>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ══ OVERLAY ══ -->
+<div class="overlay" id="overlay" onclick="closeSheet()"></div>
+
+<!-- ══ BOTTOM SHEET ══ -->
+<div class="sheet" id="sheet">
+  <div class="sheet-handle-area" id="sheet-handle">
+    <div class="sheet-handle"></div>
+  </div>
+  <div class="sheet-header">
+    <div class="sheet-title">Résultats du trade</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="sheet-asset-badge btc" id="sheet-asset-badge">BTC</div>
+      <div class="sheet-close" onclick="closeSheet()">✕</div>
+    </div>
+  </div>
+
+  <div class="sheet-body">
+
+    <!-- ── FTMO BLOCK ── -->
+    <div class="broker-block">
+      <div class="broker-header">
+        <div class="broker-name">
+          <div class="broker-dot ftmo"></div>
+          🏆 FTMO Challenge 10K
+        </div>
+        <div class="rr-score good" id="ftmo-rr">🟢 R:R —</div>
+      </div>
+
+      <div class="lot-hero">
+        <div class="lot-hero-left">
+          <div class="lot-lbl">Taille de lot</div>
+          <div class="lot-num btc" id="ftmo-lot">0.00</div>
+          <div class="lot-sub" id="ftmo-lot-sub">lots BTCUSD</div>
+        </div>
+        <div class="lot-hero-right">
+          <div class="risk-lbl">Risque fixe</div>
+          <div class="risk-amt">-$80.00</div>
+          <div style="margin-top:6px">
+            <div class="risk-lbl">Gain potentiel</div>
+            <div class="gain-amt" id="ftmo-gain">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mini-grid">
+        <div class="mini-item">
+          <div class="mini-lbl">Direction</div>
+          <div class="mini-val" id="ftmo-dir">—</div>
+        </div>
+        <div class="mini-item">
+          <div class="mini-lbl">SL dist.</div>
+          <div class="mini-val" id="ftmo-sl-d">—</div>
+        </div>
+        <div class="mini-item">
+          <div class="mini-lbl">TP dist.</div>
+          <div class="mini-val" id="ftmo-tp-d">—</div>
+        </div>
+        <div class="mini-item">
+          <div class="mini-lbl">Val./point</div>
+          <div class="mini-val" id="ftmo-pip">—</div>
+        </div>
+        <div class="mini-item">
+          <div class="mini-lbl">% compte</div>
+          <div class="mini-val neg" id="ftmo-pct">—</div>
+        </div>
+        <div class="mini-item">
+          <div class="mini-lbl">% gain</div>
+          <div class="mini-val pos" id="ftmo-gpct">—</div>
+        </div>
+      </div>
+
+      <div class="mini-warn swap" id="ftmo-swap">
+        ⚠️ ETH swap = -30%/an · Ferme avant 23h00 Abidjan
+      </div>
+    </div>
+
+    <!-- ── SEPARATOR ── -->
+    <div class="broker-sep">
+      <div class="broker-sep-line"></div>
+      <div class="broker-sep-text">VS</div>
+      <div class="broker-sep-line"></div>
+    </div>
+
+    <!-- ── EXNESS BLOCK ── -->
+    <div class="broker-block">
+      <div class="broker-header">
+        <div class="broker-name">
+          <div class="broker-dot exness"></div>
+          ⚡ Exness Raw Spread
+        </div>
+        <div class="rr-score good" id="exness-rr">🟢 R:R —</div>
+      </div>
+
+      <div class="lot-hero">
+        <div class="lot-hero-left">
+          <div class="lot-lbl">Taille de lot</div>
+          <div class="lot-num btc" id="exness-lot">0.00</div>
+          <div class="lot-sub" id="exness-lot-sub">lots BTCUSD</div>
+        </div>
+        <div class="lot-hero-right">
+          <div class="risk-lbl">Risque 1%</div>
+          <div class="risk-amt" id="exness-risk-amt">—</div>
+          <div style="margin-top:6px">
+            <div class="risk-lbl">Gain net</div>
+            <div class="gain-amt" id="exness-net">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mini-grid">
+        <div class="mini-item">
+          <div class="mini-lbl">Direction</div>
+          <div class="mini-val" id="exness-dir">—</div>
+        </div>
+        <div class="mini-item">
+          <div class="mini-lbl">SL dist.</div>
+          <div class="mini-val" id="exness-sl-d">—</div>
+        </div>
+        <div class="mini-item">
+          <div class="mini-lbl">TP dist.</div>
+          <div class="mini-val" id="exness-tp-d">—</div>
+        </div>
+        <div class="mini-item">
+          <div class="mini-lbl">Gain brut</div>
+          <div class="mini-val pos" id="exness-gain">—</div>
+        </div>
+        <div class="mini-item">
+          <div class="mini-lbl">Commission</div>
+          <div class="mini-val ora" id="exness-comm">—</div>
+        </div>
+        <div class="mini-item">
+          <div class="mini-lbl">% gain</div>
+          <div class="mini-val pos" id="exness-gpct">—</div>
+        </div>
+      </div>
+
+      <div class="mini-warn comm visible" id="exness-comm-info">
+        ℹ️ BTC: $2/lot · ETH: $0.50/lot (entrée + sortie)
+      </div>
+      <div class="mini-warn swap" id="exness-swap">
+        ⚠️ BTC swap long = -1378.3 pts/nuit · Évite l'overnight
+      </div>
+    </div>
+
+  </div><!-- /sheet-body -->
+</div><!-- /sheet -->
+
+<script>
+/* ══ CONFIG ══════════════════════════════════════ */
+const FTMO = {
+  RISK: 80,
+  ACCOUNT: 10000,
+  BTC: { cs: 1,  label: 'BTCUSD', minLot: 0.01, color: 'btc' },
+  ETH: { cs: 10, label: 'ETHUSD', minLot: 0.01, color: 'eth' }
+};
+const EXNESS = {
+  RISK_PCT: 0.01,
+  BTC: { cs: 1, label: 'BTCUSD', minLot: 0.01, color: 'btc', comm: 2   },
+  ETH: { cs: 1, label: 'ETHUSD', minLot: 0.1,  color: 'eth', comm: 0.5 }
+};
+
+let currentAsset = 'BTC';
+let isDark = false;
+
+/* ══ THEME ═══════════════════════════════════════ */
+const savedTheme = localStorage.getItem('calc-theme');
+if (savedTheme === 'dark') { isDark = true; document.documentElement.setAttribute('data-theme','dark'); }
+
+function toggleTheme() {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  localStorage.setItem('calc-theme', isDark ? 'dark' : 'light');
+}
+
+/* ══ RISK DISPLAY ════════════════════════════════ */
+function updateRiskDisplay() {
+  const acc  = parseFloat(document.getElementById('account').value) || 0;
+  const risk = acc * EXNESS.RISK_PCT;
+  document.getElementById('risk-display').textContent =
+    `Risque Exness : $${risk.toFixed(2)} · soit 1% de $${acc.toFixed(0)}`;
+}
+updateRiskDisplay();
+
+/* ══ ASSET SELECT ════════════════════════════════ */
+function selectAsset(asset, swipeDir) {
+  if (asset === currentAsset && !swipeDir) return;
+  currentAsset = asset;
+  document.querySelectorAll('.asset-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.asset === asset));
+  document.getElementById('calc-btn').dataset.asset = asset;
+  if (swipeDir) {
+    const sel = document.getElementById('asset-selector');
+    sel.classList.remove('swipe-left','swipe-right');
+    void sel.offsetWidth;
+    sel.classList.add(swipeDir === 'left' ? 'swipe-left' : 'swipe-right');
+  }
+}
+
+/* ══ SWIPE ═══════════════════════════════════════ */
+let touchStartX = 0, touchStartY = 0;
+document.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+document.addEventListener('touchend', e => {
+  if (isSheetOpen) return; // don't interfere with sheet drag
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
+  const list = ['BTC','ETH'];
+  const idx  = list.indexOf(currentAsset);
+  if (dx < 0 && idx < list.length - 1) selectAsset(list[idx+1], 'left');
+  if (dx > 0 && idx > 0)               selectAsset(list[idx-1], 'right');
+}, { passive: true });
+
+/* ══ CLEAR ═══════════════════════════════════════ */
+function clearFields() {
+  ['entry','sl','tp'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('error-msg').classList.remove('visible');
+  document.getElementById('entry').focus();
+}
+
+/* ══ R:R BADGE ═══════════════════════════════════ */
+function rrInfo(rr) {
+  if (rr < 1.5) return { cls:'bad',    emoji:'🔴' };
+  if (rr < 2.5) return { cls:'medium', emoji:'🟡' };
+  return               { cls:'good',   emoji:'🟢' };
+}
+
+/* ══ CALCULATE ═══════════════════════════════════ */
+function calculate() {
+  const errEl = document.getElementById('error-msg');
+  errEl.classList.remove('visible');
+
+  const acc   = parseFloat(document.getElementById('account').value);
+  const entry = parseFloat(document.getElementById('entry').value);
+  const sl    = parseFloat(document.getElementById('sl').value);
+  const tp    = parseFloat(document.getElementById('tp').value);
+
+  // Validations
+  if (!acc || acc <= 0)          { showErr('Entrez le capital Exness.'); return; }
+  if (!entry || !sl || !tp)      { showErr('Remplis Entry, SL et TP.'); return; }
+  if (entry<=0||sl<=0||tp<=0)    { showErr('Les prix doivent être > 0.'); return; }
+  if (sl === entry)              { showErr("SL ≠ prix d'entrée."); return; }
+  if (tp === entry)              { showErr("TP ≠ prix d'entrée."); return; }
+
+  const isLong = tp > entry;
+
+  if ( isLong && sl >= entry) { showErr("LONG : SL sous l'entrée."); return; }
+  if (!isLong && sl <= entry) { showErr("SHORT : SL au-dessus de l'entrée."); return; }
+  if ( isLong && tp <= entry) { showErr("LONG : TP au-dessus de l'entrée."); return; }
+  if (!isLong && tp >= entry) { showErr("SHORT : TP sous l'entrée."); return; }
+
+  const slDist = Math.abs(entry - sl);
+  const tpDist = Math.abs(tp - entry);
+  const dir    = isLong ? '📈 LONG' : '📉 SHORT';
+
+  /* ── FTMO ── */
+  const fa = FTMO[currentAsset];
+  const ftmoLotRaw = FTMO.RISK / (slDist * fa.cs);
+  const ftmoLot    = Math.floor(ftmoLotRaw / 0.01) * 0.01;
+
+  let ftmoOk = ftmoLot >= fa.minLot;
+  const ftmoLoss = ftmoLot * slDist * fa.cs;
+  const ftmoGain = ftmoLot * tpDist * fa.cs;
+  const ftmloPip = ftmoLot * fa.cs;
+  const ftmoRR   = tpDist / slDist;
+  const ftmoRI   = rrInfo(ftmoRR);
+
+  /* ── EXNESS ── */
+  const ea      = EXNESS[currentAsset];
+  const exRisk  = acc * EXNESS.RISK_PCT;
+  const exLotRaw = exRisk / (slDist * ea.cs);
+  const exStep   = ea.minLot;
+  const exLot    = Math.floor(exLotRaw / exStep) * exStep;
+
+  let exOk = exLot >= ea.minLot;
+  const exLoss = exLot * slDist * ea.cs;
+  const exGain = exLot * tpDist * ea.cs;
+  const exComm = exLot * ea.comm * 2;
+  const exNet  = exGain - exComm;
+  const exRR   = tpDist / slDist;
+  const exRI   = rrInfo(exRR);
+
+  /* ── FILL SHEET FTMO ── */
+  const assetColor = fa.color;
+
+  // badge
+  const badge = document.getElementById('sheet-asset-badge');
+  badge.textContent = currentAsset;
+  badge.className   = `sheet-asset-badge ${assetColor}`;
+
+  // FTMO
+  setT('ftmo-lot',      ftmoOk ? ftmoLot.toFixed(2) : 'Min!');
+  document.getElementById('ftmo-lot').className = `lot-num ${assetColor}`;
+  setT('ftmo-lot-sub',  `lots ${fa.label}`);
+  setRR('ftmo-rr', ftmoRI, ftmoRR);
+  setT('ftmo-gain',  ftmoOk ? `+$${ftmoGain.toFixed(2)}` : '—');
+  setT('ftmo-dir',   dir);
+  setT('ftmo-sl-d',  `${slDist.toFixed(2)}`);
+  setT('ftmo-tp-d',  `${tpDist.toFixed(2)}`);
+  setT('ftmo-pip',   ftmoOk ? `$${ftmloPip.toFixed(2)}` : '—');
+  setT('ftmo-pct',   ftmoOk ? `-${(ftmoLoss/FTMO.ACCOUNT*100).toFixed(2)}%` : '—');
+  setT('ftmo-gpct',  ftmoOk ? `+${(ftmoGain/FTMO.ACCOUNT*100).toFixed(2)}%` : '—');
+  document.getElementById('ftmo-swap').classList.toggle('visible', currentAsset === 'ETH');
+
+  // EXNESS
+  setT('exness-lot',     exOk ? exLot.toFixed(2) : 'Min!');
+  document.getElementById('exness-lot').className = `lot-num ${assetColor}`;
+  setT('exness-lot-sub', `lots ${ea.label}`);
+  setRR('exness-rr', exRI, exRR);
+  setT('exness-risk-amt', `-$${exRisk.toFixed(2)}`);
+  setT('exness-gain',  exOk ? `+$${exGain.toFixed(2)}` : '—');
+  setT('exness-net',   exOk ? `+$${exNet.toFixed(2)}`  : '—');
+  setT('exness-dir',   dir);
+  setT('exness-sl-d',  `${slDist.toFixed(2)}`);
+  setT('exness-tp-d',  `${tpDist.toFixed(2)}`);
+  setT('exness-comm',  exOk ? `-$${exComm.toFixed(2)}` : '—');
+  setT('exness-gpct',  exOk ? `+${(exNet/acc*100).toFixed(2)}%` : '—');
+  document.getElementById('exness-swap').classList.toggle('visible', currentAsset === 'BTC');
+
+  openSheet();
+}
+
+/* ══ HELPERS ═════════════════════════════════════ */
+function setT(id, val) { document.getElementById(id).textContent = val; }
+function setRR(id, info, rr) {
+  const el = document.getElementById(id);
+  el.textContent = `${info.emoji} R:R 1:${rr.toFixed(2)}`;
+  el.className   = `rr-score ${info.cls}`;
+}
+function showErr(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+/* ══ SHEET ═══════════════════════════════════════ */
+let isSheetOpen = false;
+
+function openSheet() {
+  document.getElementById('overlay').classList.add('visible');
+  document.getElementById('sheet').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  isSheetOpen = true;
+}
+
+function closeSheet() {
+  document.getElementById('overlay').classList.remove('visible');
+  document.getElementById('sheet').classList.remove('open');
+  document.body.style.overflow = '';
+  isSheetOpen = false;
+}
+
+/* ── Sheet drag to close ── */
+let sheetStartY = 0, sheetCurrentY = 0, sheetDragging = false;
+const sheetEl  = document.getElementById('sheet');
+const handleEl = document.getElementById('sheet-handle');
+
+handleEl.addEventListener('touchstart', e => {
+  sheetStartY   = e.touches[0].clientY;
+  sheetDragging = true;
+  sheetEl.style.transition = 'none';
+}, { passive: true });
+
+document.addEventListener('touchmove', e => {
+  if (!sheetDragging) return;
+  sheetCurrentY = e.touches[0].clientY;
+  const dy = Math.max(0, sheetCurrentY - sheetStartY);
+  sheetEl.style.transform = `translateY(${dy}px)`;
+}, { passive: true });
+
+document.addEventListener('touchend', () => {
+  if (!sheetDragging) return;
+  sheetDragging = false;
+  sheetEl.style.transition = '';
+  const dy = sheetCurrentY - sheetStartY;
+  if (dy > 120) {
+    sheetEl.style.transform = '';
+    closeSheet();
+  } else {
+    sheetEl.style.transform = '';
+  }
+});
+
+/* Enter key */
+document.addEventListener('keydown', e => { if (e.key === 'Enter') calculate(); });
+</script>
+</body>
+</html>
