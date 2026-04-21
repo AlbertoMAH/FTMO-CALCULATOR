@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FTMO Lot Calculator</title>
+<title>Lot Calculator</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
-  /* ── LIGHT THEME (default) ── */
+  /* ── LIGHT THEME ── */
   :root {
     --bg: #f0f2f5;
     --panel: #ffffff;
@@ -16,6 +16,7 @@
     --eth: #4a6bd6;
     --green: #0a9e5c;
     --red: #d92d44;
+    --orange: #d97706;
     --text: #0d1117;
     --muted: #7a8499;
     --input-bg: rgba(0,0,0,0.03);
@@ -23,11 +24,8 @@
     --shadow: 0 2px 12px rgba(0,0,0,0.07);
     --glow-btc: 0 0 20px rgba(232,130,12,0.18);
     --glow-eth: 0 0 20px rgba(74,107,214,0.18);
-    --glow-xau: 0 0 20px rgba(180,150,40,0.22);
     --active-btc-bg: rgba(232,130,12,0.07);
     --active-eth-bg: rgba(74,107,214,0.07);
-    --active-xau-bg: rgba(180,150,40,0.07);
-    --xau: #c9a227;
     --sl-border: rgba(217,45,68,0.3);
     --tp-border: rgba(10,158,92,0.3);
     --warn-bg: rgba(180,130,0,0.07);
@@ -37,8 +35,15 @@
     --err-border: rgba(217,45,68,0.3);
     --rr-bg: rgba(0,0,0,0.04);
     --result-item-bg: rgba(0,0,0,0.025);
-    --body-pseudo1: rgba(74,107,214,0.05);
-    --body-pseudo2: rgba(232,130,12,0.04);
+    --section-sep: rgba(0,0,0,0.06);
+    --tabbar-bg: #ffffff;
+    --tabbar-border: #e1e5eb;
+    --tab-active-ftmo: #e8820c;
+    --tab-active-exness: #00c853;
+    --exness: #00c853;
+    --exness-dim: rgba(0,200,83,0.08);
+    --exness-border: rgba(0,200,83,0.35);
+    --exness-glow: 0 0 20px rgba(0,200,83,0.2);
   }
 
   /* ── DARK THEME ── */
@@ -51,6 +56,7 @@
     --eth: #627eea;
     --green: #00e676;
     --red: #ff3d57;
+    --orange: #fb923c;
     --text: #e6edf3;
     --muted: #6e7681;
     --input-bg: rgba(255,255,255,0.03);
@@ -58,11 +64,8 @@
     --shadow: 0 2px 16px rgba(0,0,0,0.5);
     --glow-btc: 0 0 24px rgba(247,147,26,0.25);
     --glow-eth: 0 0 24px rgba(98,126,234,0.25);
-    --glow-xau: 0 0 24px rgba(210,170,50,0.28);
     --active-btc-bg: rgba(247,147,26,0.06);
     --active-eth-bg: rgba(98,126,234,0.06);
-    --active-xau-bg: rgba(210,170,50,0.07);
-    --xau: #d4a93a;
     --sl-border: rgba(255,61,87,0.25);
     --tp-border: rgba(0,230,118,0.2);
     --warn-bg: rgba(255,193,7,0.06);
@@ -72,8 +75,15 @@
     --err-border: rgba(255,61,87,0.3);
     --rr-bg: rgba(255,255,255,0.05);
     --result-item-bg: rgba(255,255,255,0.03);
-    --body-pseudo1: rgba(98,126,234,0.08);
-    --body-pseudo2: rgba(247,147,26,0.06);
+    --section-sep: rgba(255,255,255,0.06);
+    --tabbar-bg: #0d1117;
+    --tabbar-border: #1c2333;
+    --tab-active-ftmo: #f7931a;
+    --tab-active-exness: #00e676;
+    --exness: #00e676;
+    --exness-dim: rgba(0,230,118,0.07);
+    --exness-border: rgba(0,230,118,0.3);
+    --exness-glow: 0 0 24px rgba(0,230,118,0.2);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -84,202 +94,208 @@
     font-family: 'Syne', sans-serif;
     min-height: 100vh;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px 16px 40px;
+    flex-direction: column;
     overflow-x: hidden;
     transition: background 0.35s ease, color 0.35s ease;
+    padding-bottom: 72px; /* tabbar height */
   }
 
   body::before {
     content: '';
     position: fixed; inset: 0;
-    background: radial-gradient(ellipse 80% 50% at 50% -10%, var(--body-pseudo1), transparent),
-                radial-gradient(ellipse 60% 40% at 80% 80%, var(--body-pseudo2), transparent);
+    background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(74,107,214,0.05), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 80%, rgba(232,130,12,0.04), transparent);
     pointer-events: none;
-    transition: background 0.35s ease;
+    transition: background 0.35s;
+    z-index: 0;
   }
 
-  .container { width: 100%; max-width: 420px; position: relative; }
+  /* ── TABBAR ── */
+  .tabbar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 64px;
+    background: var(--tabbar-bg);
+    border-top: 1px solid var(--tabbar-border);
+    display: flex;
+    z-index: 100;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.07);
+    transition: background 0.35s, border-color 0.35s;
+  }
+
+  .tab-btn {
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    border: none; background: none;
+    font-family: 'Syne', sans-serif;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+
+  .tab-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 20%; right: 20%;
+    height: 2.5px;
+    border-radius: 0 0 4px 4px;
+    background: transparent;
+    transition: background 0.25s, opacity 0.25s;
+  }
+
+  .tab-btn.active-ftmo::before  { background: var(--tab-active-ftmo); }
+  .tab-btn.active-exness::before { background: var(--tab-active-exness); }
+
+  .tab-icon {
+    font-size: 20px; line-height: 1;
+    transition: transform 0.2s;
+  }
+  .tab-btn.active-ftmo .tab-icon,
+  .tab-btn.active-exness .tab-icon { transform: scale(1.15); }
+
+  .tab-label {
+    font-size: 9px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    transition: color 0.2s;
+  }
+  .tab-btn.active-ftmo .tab-label  { color: var(--tab-active-ftmo); }
+  .tab-btn.active-exness .tab-label { color: var(--tab-active-exness); }
+
+  /* ── PAGES ── */
+  .page {
+    display: none;
+    flex: 1;
+    padding: 20px 16px 16px;
+    position: relative;
+    z-index: 1;
+    max-width: 440px;
+    width: 100%;
+    margin: 0 auto;
+    animation: fadeUp 0.35s ease both;
+  }
+  .page.active { display: block; }
 
   /* ── THEME TOGGLE ── */
+  .top-bar {
+    display: flex; align-items: center; justify-content: flex-end;
+    margin-bottom: 18px;
+  }
   .theme-toggle {
-    position: absolute;
-    top: 2px; right: 0;
     display: flex; align-items: center; gap: 6px;
     cursor: pointer; user-select: none;
   }
-
   .t-icon { font-size: 13px; line-height: 1; }
-
   .toggle-track {
-    width: 42px; height: 23px;
-    background: #dde1ea;
-    border-radius: 100px;
-    position: relative;
-    transition: background 0.3s ease;
-    border: 1px solid var(--border);
+    width: 42px; height: 23px; background: #dde1ea;
+    border-radius: 100px; position: relative;
+    transition: background 0.3s; border: 1px solid var(--border);
   }
-
   [data-theme="dark"] .toggle-track { background: #2a3a5a; }
-
   .toggle-thumb {
-    position: absolute;
-    top: 3px; left: 3px;
-    width: 15px; height: 15px;
-    border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+    position: absolute; top: 3px; left: 3px;
+    width: 15px; height: 15px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 5px rgba(0,0,0,0.2);
     transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), background 0.3s;
   }
-
-  [data-theme="dark"] .toggle-thumb {
-    transform: translateX(19px);
-    background: #627eea;
-  }
+  [data-theme="dark"] .toggle-thumb { transform: translateX(19px); background: #627eea; }
 
   /* ── HEADER ── */
-  .header {
-    text-align: center;
-    padding-top: 10px;
-    margin-bottom: 26px;
-    animation: fadeDown 0.6s ease both;
-  }
-
+  .header { text-align: center; margin-bottom: 18px; }
   .badge {
     display: inline-flex; align-items: center; gap: 6px;
-    background: var(--input-bg);
-    border: 1px solid var(--border);
-    border-radius: 100px;
-    padding: 5px 14px;
+    background: var(--input-bg); border: 1px solid var(--border);
+    border-radius: 100px; padding: 5px 14px;
     font-family: 'Space Mono', monospace;
     font-size: 10px; color: var(--muted);
-    letter-spacing: 1.5px; text-transform: uppercase;
-    margin-bottom: 12px;
+    letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px;
   }
   .badge::before {
-    content: ''; width: 6px; height: 6px;
-    border-radius: 50%;
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
     background: var(--green); box-shadow: 0 0 8px var(--green);
     animation: pulse 2s infinite;
   }
+  .badge.exness-badge::before { background: var(--exness); box-shadow: 0 0 8px var(--exness); }
 
-  h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1; }
-  h1 span { color: var(--btc); }
-  .header p { color: var(--muted); font-size: 13px; margin-top: 6px; font-family: 'Space Mono', monospace; }
+  h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1; }
+  h1 .accent-ftmo  { color: var(--btc); }
+  h1 .accent-exness { color: var(--exness); }
+  .header p { color: var(--muted); font-size: 12px; margin-top: 5px; font-family: 'Space Mono', monospace; }
 
-  /* ── ASSET PAGER ── */
-  .pager-wrap {
-    margin-bottom: 14px;
-    animation: fadeUp 0.6s 0.1s ease both;
+  /* ── SWIPE HINT ── */
+  .swipe-hint {
+    text-align: center; font-size: 10px; color: var(--muted);
+    font-family: 'Space Mono', monospace; letter-spacing: 1px;
+    margin-bottom: 8px; opacity: 0.7;
   }
 
-  .pager-track-outer {
-    overflow: hidden;
-    border-radius: 16px;
+  /* ── ASSET SELECTOR ── */
+  .asset-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .asset-btn {
+    background: var(--panel); border: 1.5px solid var(--border);
+    border-radius: 12px; padding: 14px;
+    cursor: pointer; transition: all 0.2s ease;
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Syne', sans-serif; box-shadow: var(--shadow);
   }
-
-  .pager-track {
-    display: flex;
-    transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: transform;
-  }
-
-  .asset-card {
-    min-width: 100%;
-    background: var(--panel);
-    border: 1.5px solid var(--border);
-    border-radius: 16px;
-    padding: 18px 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    box-shadow: var(--shadow);
-    cursor: pointer;
-    transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
-    user-select: none;
-  }
-
-  .asset-card.active[data-asset="BTC"] { border-color: var(--btc); background: var(--active-btc-bg); box-shadow: var(--glow-btc); }
-  .asset-card.active[data-asset="ETH"] { border-color: var(--eth); background: var(--active-eth-bg); box-shadow: var(--glow-eth); }
-  .asset-card.active[data-asset="XAU"] { border-color: var(--xau); background: var(--active-xau-bg); box-shadow: var(--glow-xau); }
-
-  .asset-card-left {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    flex: 1;
-  }
-
-  .asset-card-right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 3px;
-  }
-
-  .asset-tag {
-    font-size: 9px;
-    font-family: 'Space Mono', monospace;
-    font-weight: 700;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    padding: 3px 8px;
-    border-radius: 100px;
-    border: 1px solid currentColor;
-    opacity: 0.55;
-  }
-
-  .asset-tag.btc { color: var(--btc); }
-  .asset-tag.eth { color: var(--eth); }
-  .asset-tag.xau { color: var(--xau); }
-
-  .asset-lot-info {
-    font-size: 10px;
-    font-family: 'Space Mono', monospace;
-    color: var(--muted);
-  }
-
-  .asset-icon { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; flex-shrink: 0; }
+  .asset-btn:hover { border-color: var(--border-hover); }
+  .asset-btn.active[data-asset="BTC"] { border-color: var(--btc); background: var(--active-btc-bg); box-shadow: var(--glow-btc); }
+  .asset-btn.active[data-asset="ETH"] { border-color: var(--eth); background: var(--active-eth-bg); box-shadow: var(--glow-eth); }
+  .asset-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; flex-shrink: 0; }
   .btc-icon { background: rgba(232,130,12,0.13); color: var(--btc); }
   .eth-icon { background: rgba(74,107,214,0.13); color: var(--eth); }
-  .xau-icon { background: rgba(201,162,39,0.15); color: var(--xau); }
-
   .asset-info { text-align: left; }
-  .asset-name { font-size: 17px; font-weight: 800; color: var(--text); line-height: 1.1; }
-  .asset-sub  { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; margin-top: 2px; }
+  .asset-name { font-size: 15px; font-weight: 700; color: var(--text); }
+  .asset-sub  { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; }
 
-  /* Dot indicator */
-  .dot-indicator {
-    display: flex;
-    justify-content: center;
-    gap: 6px;
-    margin-top: 10px;
+  /* ── ACCOUNT SIZE (Exness only) ── */
+  .account-card {
+    background: var(--exness-dim);
+    border: 1.5px solid var(--exness-border);
+    border-radius: 14px; padding: 14px 18px; margin-bottom: 10px;
+    box-shadow: var(--exness-glow);
+    transition: background 0.35s, border-color 0.35s;
   }
-
-  .dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--border);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: pointer;
+  .account-card-title {
+    font-size: 10px; font-weight: 700; color: var(--exness);
+    text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;
+    font-family: 'Space Mono', monospace;
   }
-
-  .dot.active[data-idx="0"] { background: var(--btc); width: 20px; border-radius: 4px; }
-  .dot.active[data-idx="1"] { background: var(--eth); width: 20px; border-radius: 4px; }
-  .dot.active[data-idx="2"] { background: var(--xau); width: 20px; border-radius: 4px; }
+  .account-row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--input-bg); border: 1px solid var(--exness-border);
+    border-radius: 10px; padding: 0 14px;
+    transition: border-color 0.2s;
+  }
+  .account-row:focus-within { border-color: var(--exness); }
+  .account-row label { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; white-space: nowrap; }
+  .account-row input {
+    flex: 1; background: none; border: none; outline: none;
+    color: var(--text); font-family: 'Space Mono', monospace;
+    font-size: 15px; padding: 13px 0; text-align: right;
+    transition: color 0.35s;
+  }
+  .account-row input::placeholder { color: var(--placeholder); }
+  .account-tag { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .risk-computed {
+    margin-top: 8px;
+    font-size: 11px; font-family: 'Space Mono', monospace;
+    color: var(--exness); text-align: right;
+    min-height: 16px;
+  }
 
   /* ── CARD ── */
   .card {
     background: var(--panel); border: 1px solid var(--border);
-    border-radius: 16px; padding: 20px; margin-bottom: 10px;
+    border-radius: 16px; padding: 18px; margin-bottom: 10px;
     box-shadow: var(--shadow);
     transition: background 0.35s, border-color 0.35s;
-    animation: fadeUp 0.6s 0.2s ease both;
   }
-  .card-title { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 14px; font-family: 'Space Mono', monospace; }
-  .input-group { display: flex; flex-direction: column; gap: 10px; }
-
+  .card-title { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; font-family: 'Space Mono', monospace; }
+  .input-group { display: flex; flex-direction: column; gap: 9px; }
   .input-row {
     display: flex; align-items: center; gap: 10px;
     background: var(--input-bg); border: 1px solid var(--border);
@@ -287,11 +303,15 @@
     transition: border-color 0.2s, background 0.35s;
   }
   .input-row:focus-within { border-color: var(--border-hover); }
-  .input-row label { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; white-space: nowrap; min-width: 28px; }
-  .input-row input { flex: 1; background: none; border: none; outline: none; color: var(--text); font-family: 'Space Mono', monospace; font-size: 15px; padding: 13px 0; text-align: right; transition: color 0.35s; }
+  .input-row label { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; white-space: nowrap; min-width: 34px; }
+  .input-row input {
+    flex: 1; background: none; border: none; outline: none;
+    color: var(--text); font-family: 'Space Mono', monospace;
+    font-size: 15px; padding: 12px 0; text-align: right;
+    transition: color 0.35s;
+  }
   .input-row input::placeholder { color: var(--placeholder); }
   .input-tag { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; }
-
   .sl-row .input-row { border-color: var(--sl-border); }
   .sl-row .input-row:focus-within { border-color: var(--red); }
   .tp-row .input-row { border-color: var(--tp-border); }
@@ -300,28 +320,26 @@
   /* ── RISK BAR ── */
   .risk-bar {
     background: var(--panel); border: 1px solid var(--border);
-    border-radius: 14px; padding: 14px 20px; margin-bottom: 10px;
+    border-radius: 14px; padding: 14px 18px; margin-bottom: 10px;
     display: flex; align-items: center; justify-content: space-between;
     box-shadow: var(--shadow);
     transition: background 0.35s, border-color 0.35s;
-    animation: fadeUp 0.6s 0.25s ease both;
   }
   .risk-label { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 1px; }
   .risk-value { font-size: 20px; font-weight: 800; color: var(--text); font-family: 'Space Mono', monospace; }
-  .risk-value span { color: var(--green); font-size: 12px; margin-left: 5px; }
+  .risk-value span { font-size: 12px; margin-left: 5px; }
+  .risk-value .ftmo-tag  { color: var(--btc); }
+  .risk-value .exness-tag { color: var(--exness); }
 
   /* ── BUTTON ── */
   .calc-btn {
-    width: 100%; padding: 16px; border: none; border-radius: 12px;
+    width: 100%; padding: 15px; border: none; border-radius: 12px;
     font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800;
     letter-spacing: 0.5px; cursor: pointer;
-    transition: all 0.2s ease;
-    margin-bottom: 10px;
-    animation: fadeUp 0.6s 0.3s ease both;
+    transition: all 0.2s ease; margin-bottom: 10px;
   }
   .calc-btn[data-asset="BTC"] { background: linear-gradient(135deg, #f7931a, #df7a08); color: #fff; box-shadow: 0 4px 18px rgba(247,147,26,0.35); }
   .calc-btn[data-asset="ETH"] { background: linear-gradient(135deg, #627eea, #4a63c8); color: #fff; box-shadow: 0 4px 18px rgba(98,126,234,0.35); }
-  .calc-btn[data-asset="XAU"] { background: linear-gradient(135deg, #d4a93a, #b8891e); color: #fff; box-shadow: 0 4px 18px rgba(212,169,58,0.35); }
   .calc-btn:hover  { transform: translateY(-1px); filter: brightness(1.08); }
   .calc-btn:active { transform: translateY(0); }
 
@@ -331,43 +349,72 @@
     border-radius: 10px; padding: 11px 16px; color: var(--red);
     font-size: 12px; font-family: 'Space Mono', monospace;
     text-align: center; display: none; margin-bottom: 10px;
-    animation: fadeUp 0.3s ease both;
   }
   .error-msg.visible { display: block; }
+
+  /* ── CLEAR BTN ── */
+  .clear-btn {
+    width: 100%; padding: 11px; border-radius: 10px; border: 1.5px solid var(--border);
+    background: transparent; color: var(--muted);
+    font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s ease; margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+  }
+  .clear-btn:hover  { border-color: var(--red); color: var(--red); background: var(--err-bg); }
+  .clear-btn:active { transform: scale(0.98); }
 
   /* ── RESULTS ── */
   .results {
     background: var(--panel); border: 1px solid var(--border);
-    border-radius: 16px; padding: 20px; box-shadow: var(--shadow);
-    display: none; animation: fadeUp 0.4s ease both;
+    border-radius: 16px; padding: 18px; box-shadow: var(--shadow);
+    display: none;
     transition: background 0.35s, border-color 0.35s;
   }
-  .results.visible { display: block; }
+  .results.visible { display: block; animation: fadeUp 0.4s ease both; }
 
-  .result-main { text-align: center; padding: 14px 0 18px; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
-  .lot-label { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
+  .result-main { text-align: center; padding: 12px 0 16px; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+  .lot-label { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; }
   .lot-value { font-size: 52px; font-weight: 800; font-family: 'Space Mono', monospace; line-height: 1; }
   .lot-value.btc { color: var(--btc); }
   .lot-value.eth { color: var(--eth); }
-  .lot-value.xau { color: var(--xau); }
   .lot-sub { font-size: 12px; color: var(--muted); font-family: 'Space Mono', monospace; margin-top: 4px; }
 
-  .rr-badge {
-    display: inline-flex; align-items: center; gap: 4px;
-    background: var(--rr-bg); border: 1px solid var(--border);
-    border-radius: 100px; padding: 3px 12px;
-    font-size: 11px; font-family: 'Space Mono', monospace; color: var(--muted);
-    margin-top: 8px;
+  /* R:R score */
+  .rr-score {
+    display: inline-flex; align-items: center; gap: 6px;
+    border-radius: 100px; padding: 4px 14px;
+    font-size: 12px; font-weight: 700; font-family: 'Space Mono', monospace;
+    margin-top: 10px; border: 1.5px solid; transition: all 0.3s;
   }
+  .rr-score.bad    { background: rgba(217,45,68,0.08);  border-color: rgba(217,45,68,0.35);  color: var(--red); }
+  .rr-score.medium { background: rgba(217,119,6,0.08);  border-color: rgba(217,119,6,0.35);  color: var(--orange); }
+  .rr-score.good   { background: rgba(10,158,92,0.08);  border-color: rgba(10,158,92,0.35);  color: var(--green); }
+  [data-theme="dark"] .rr-score.bad    { background: rgba(255,61,87,0.08);  border-color: rgba(255,61,87,0.3); }
+  [data-theme="dark"] .rr-score.medium { background: rgba(251,146,60,0.08); border-color: rgba(251,146,60,0.3); }
+  [data-theme="dark"] .rr-score.good   { background: rgba(0,230,118,0.08);  border-color: rgba(0,230,118,0.3); }
 
-  .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .result-item { background: var(--result-item-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; transition: background 0.35s, border-color 0.35s; }
-  .r-label { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  /* Metrics grid */
+  .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .result-item {
+    background: var(--result-item-bg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 11px;
+    transition: background 0.35s, border-color 0.35s;
+  }
+  .r-label { font-size: 9px; color: var(--muted); font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
   .r-val { font-size: 14px; font-weight: 700; font-family: 'Space Mono', monospace; }
   .r-val.positive { color: var(--green); }
   .r-val.negative { color: var(--red); }
   .r-val.neutral  { color: var(--text); }
+  .r-val.orange   { color: var(--orange); }
 
+  /* Account impact */
+  .impact-section { border-top: 1px solid var(--section-sep); padding-top: 12px; margin-bottom: 4px; }
+  .impact-title { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; font-family: 'Space Mono', monospace; margin-bottom: 10px; }
+  .impact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .impact-item { background: var(--result-item-bg); border: 1px solid var(--border); border-radius: 10px; padding: 11px; }
+
+  /* Swap warn */
   .swap-warn {
     background: var(--warn-bg); border: 1px solid var(--warn-border);
     border-radius: 10px; padding: 10px 14px;
@@ -377,308 +424,629 @@
   }
   .swap-warn.visible { display: block; }
 
+  /* Commission info (Exness) */
+  .commission-info {
+    background: var(--exness-dim); border: 1px solid var(--exness-border);
+    border-radius: 10px; padding: 10px 14px;
+    font-size: 11px; font-family: 'Space Mono', monospace; color: var(--exness);
+    margin-top: 10px; display: none; line-height: 1.55;
+  }
+  .commission-info.visible { display: block; }
+
   /* ── ANIMATIONS ── */
-  @keyframes fadeDown { from { opacity:0; transform:translateY(-16px); } to { opacity:1; transform:translateY(0); } }
-  @keyframes fadeUp   { from { opacity:0; transform:translateY(14px);  } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeUp   { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
   @keyframes pulse    { 0%,100% { opacity:1; } 50% { opacity:0.35; } }
+  @keyframes slideLeft  { from { opacity:0; transform:translateX(40px);  } to { opacity:1; transform:translateX(0); } }
+  @keyframes slideRight { from { opacity:0; transform:translateX(-40px); } to { opacity:1; transform:translateX(0); } }
+  .swipe-left  { animation: slideLeft  0.3s ease both; }
+  .swipe-right { animation: slideRight 0.3s ease both; }
 </style>
 </head>
 <body>
-<div class="container">
 
-  <!-- Theme Toggle -->
-  <div class="theme-toggle" onclick="toggleTheme()" title="Changer le thème">
-    <span class="t-icon">☀️</span>
-    <div class="toggle-track"><div class="toggle-thumb"></div></div>
-    <span class="t-icon">🌙</span>
+<!-- ══════════════════════════════════════
+     PAGE : FTMO
+══════════════════════════════════════ -->
+<div class="page active" id="page-ftmo">
+
+  <div class="top-bar">
+    <div class="theme-toggle" onclick="toggleTheme()">
+      <span class="t-icon">☀️</span>
+      <div class="toggle-track"><div class="toggle-thumb"></div></div>
+      <span class="t-icon">🌙</span>
+    </div>
   </div>
 
-  <!-- Header -->
   <div class="header">
     <div class="badge">FTMO Challenge 10K</div>
-    <h1>LOT <span>CALCULATOR</span></h1>
-    <p>Risk fixe : $80 / trade</p>
+    <h1>LOT <span class="accent-ftmo">CALCULATOR</span></h1>
+    <p>Risk fixe : $80 / trade · 0.8% du capital</p>
   </div>
 
-  <!-- Asset Pager -->
-  <div class="pager-wrap">
-    <div class="pager-track-outer">
-      <div class="pager-track" id="pagerTrack">
+  <div class="swipe-hint">← Swipe pour changer d'asset →</div>
 
-        <!-- BTC -->
-        <div class="asset-card active" data-asset="BTC" onclick="selectAsset(0)">
-          <div class="asset-card-left">
-            <div class="asset-icon btc-icon">₿</div>
-            <div class="asset-info">
-              <div class="asset-name">Bitcoin</div>
-              <div class="asset-sub">BTCUSD · Spot CFD</div>
-            </div>
-          </div>
-          <div class="asset-card-right">
-            <span class="asset-tag btc">BTC</span>
-            <span class="asset-lot-info">lot × 1</span>
-          </div>
-        </div>
-
-        <!-- ETH -->
-        <div class="asset-card" data-asset="ETH" onclick="selectAsset(1)">
-          <div class="asset-card-left">
-            <div class="asset-icon eth-icon">Ξ</div>
-            <div class="asset-info">
-              <div class="asset-name">Ethereum</div>
-              <div class="asset-sub">ETHUSD · Spot CFD</div>
-            </div>
-          </div>
-          <div class="asset-card-right">
-            <span class="asset-tag eth">ETH</span>
-            <span class="asset-lot-info">lot × 10</span>
-          </div>
-        </div>
-
-        <!-- XAU -->
-        <div class="asset-card" data-asset="XAU" onclick="selectAsset(2)">
-          <div class="asset-card-left">
-            <div class="asset-icon xau-icon">Au</div>
-            <div class="asset-info">
-              <div class="asset-name">Gold</div>
-              <div class="asset-sub">XAUUSD · Spot CFD</div>
-            </div>
-          </div>
-          <div class="asset-card-right">
-            <span class="asset-tag xau">XAU</span>
-            <span class="asset-lot-info">lot × 100</span>
-          </div>
-        </div>
-
+  <div class="asset-selector" id="ftmo-asset-selector">
+    <button class="asset-btn active" data-asset="BTC" onclick="ftmoSelectAsset('BTC')">
+      <div class="asset-icon btc-icon">₿</div>
+      <div class="asset-info">
+        <div class="asset-name">Bitcoin</div>
+        <div class="asset-sub">BTCUSD · lot×1</div>
       </div>
-    </div>
-    <!-- Dot indicator -->
-    <div class="dot-indicator">
-      <div class="dot active" data-idx="0" onclick="selectAsset(0)"></div>
-      <div class="dot" data-idx="1" onclick="selectAsset(1)"></div>
-      <div class="dot" data-idx="2" onclick="selectAsset(2)"></div>
-    </div>
+    </button>
+    <button class="asset-btn" data-asset="ETH" onclick="ftmoSelectAsset('ETH')">
+      <div class="asset-icon eth-icon">Ξ</div>
+      <div class="asset-info">
+        <div class="asset-name">Ethereum</div>
+        <div class="asset-sub">ETHUSD · lot×10</div>
+      </div>
+    </button>
   </div>
 
-  <!-- Entry -->
   <div class="card">
     <div class="card-title">Prix d'entrée</div>
     <div class="input-group">
       <div class="input-row">
         <label>ENTRY</label>
-        <input type="number" id="entry" placeholder="0.00" step="0.01" inputmode="decimal">
+        <input type="number" id="ftmo-entry" placeholder="0.00" step="0.01" inputmode="decimal">
         <span class="input-tag">USD</span>
       </div>
     </div>
   </div>
 
-  <!-- SL / TP -->
   <div class="card">
     <div class="card-title">Stop Loss &amp; Take Profit</div>
     <div class="input-group">
       <div class="sl-row">
         <div class="input-row">
           <label>SL</label>
-          <input type="number" id="sl" placeholder="0.00" step="0.01" inputmode="decimal">
+          <input type="number" id="ftmo-sl" placeholder="0.00" step="0.01" inputmode="decimal">
           <span class="input-tag">USD</span>
         </div>
       </div>
       <div class="tp-row">
         <div class="input-row">
           <label>TP</label>
-          <input type="number" id="tp" placeholder="0.00" step="0.01" inputmode="decimal">
+          <input type="number" id="ftmo-tp" placeholder="0.00" step="0.01" inputmode="decimal">
           <span class="input-tag">USD</span>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Risk -->
   <div class="risk-bar">
     <div class="risk-label">Risque / trade</div>
-    <div class="risk-value">$80.00 <span>FIXE</span></div>
+    <div class="risk-value">$80.00 <span class="ftmo-tag">FIXE</span></div>
   </div>
 
-  <!-- Error -->
-  <div class="error-msg" id="errorMsg"></div>
+  <div class="error-msg" id="ftmo-error"></div>
 
-  <!-- Button -->
-  <button class="calc-btn" id="calcBtn" data-asset="BTC" onclick="calculate()">
+  <button class="calc-btn" id="ftmo-calc-btn" data-asset="BTC" onclick="ftmoCalculate()">
     CALCULER LE LOT
   </button>
 
-  <!-- Results -->
-  <div class="results" id="results">
+  <button class="clear-btn" onclick="ftmoClear()">✕ Effacer les champs</button>
+
+  <div class="results" id="ftmo-results">
     <div class="result-main">
       <div class="lot-label">Taille de lot recommandée</div>
-      <div class="lot-value btc" id="lotDisplay">0.00</div>
-      <div class="lot-sub" id="lotSub">lots BTCUSD</div>
-      <div class="rr-badge" id="rrBadge">R:R —</div>
+      <div class="lot-value btc" id="ftmo-lot-display">0.00</div>
+      <div class="lot-sub" id="ftmo-lot-sub">lots BTCUSD</div>
+      <div class="rr-score good" id="ftmo-rr-score">🟢 R:R —</div>
     </div>
     <div class="result-grid">
       <div class="result-item">
         <div class="r-label">SL Distance</div>
-        <div class="r-val neutral" id="slPips">—</div>
+        <div class="r-val neutral" id="ftmo-sl-dist">—</div>
       </div>
       <div class="result-item">
         <div class="r-label">TP Distance</div>
-        <div class="r-val neutral" id="tpPips">—</div>
+        <div class="r-val neutral" id="ftmo-tp-dist">—</div>
       </div>
       <div class="result-item">
         <div class="r-label">Perte max</div>
-        <div class="r-val negative" id="maxLoss">—</div>
+        <div class="r-val negative" id="ftmo-max-loss">—</div>
       </div>
       <div class="result-item">
         <div class="r-label">Gain potentiel</div>
-        <div class="r-val positive" id="potGain">—</div>
+        <div class="r-val positive" id="ftmo-pot-gain">—</div>
       </div>
       <div class="result-item">
         <div class="r-label">Valeur / point</div>
-        <div class="r-val neutral" id="pipVal">—</div>
+        <div class="r-val neutral" id="ftmo-pip-val">—</div>
       </div>
       <div class="result-item">
         <div class="r-label">Direction</div>
-        <div class="r-val neutral" id="direction">—</div>
+        <div class="r-val neutral" id="ftmo-direction">—</div>
       </div>
     </div>
-    <div class="swap-warn" id="swapWarn">
+    <div class="impact-section">
+      <div class="impact-title">Impact compte 10K</div>
+      <div class="impact-grid">
+        <div class="impact-item">
+          <div class="r-label">% Capital risqué</div>
+          <div class="r-val neutral" id="ftmo-risk-pct">—</div>
+        </div>
+        <div class="impact-item">
+          <div class="r-label">% Gain potentiel</div>
+          <div class="r-val positive" id="ftmo-gain-pct">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="swap-warn" id="ftmo-swap-warn">
       ⚠️ ETH : swap = <strong>-30%/an</strong> par position.<br>
       Ferme avant 23h00 (heure Abidjan) pour éviter le rollover.
     </div>
-    <div class="swap-warn" id="swapWarnXau">
-      ⚠️ GOLD : swap long = <strong>-87.08 pts</strong> par lot.<br>
-      Mercredi : rollover ×3. Ferme avant 23h00 pour éviter le triple swap.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE : EXNESS
+══════════════════════════════════════ -->
+<div class="page" id="page-exness">
+
+  <div class="top-bar">
+    <div class="theme-toggle" onclick="toggleTheme()">
+      <span class="t-icon">☀️</span>
+      <div class="toggle-track"><div class="toggle-thumb"></div></div>
+      <span class="t-icon">🌙</span>
     </div>
   </div>
 
+  <div class="header">
+    <div class="badge exness-badge">Exness · Raw Spread</div>
+    <h1>LOT <span class="accent-exness">CALCULATOR</span></h1>
+    <p>Risk : 1% du capital · modifiable</p>
+  </div>
+
+  <div class="swipe-hint">← Swipe pour changer d'asset →</div>
+
+  <!-- Account size (Exness only) -->
+  <div class="account-card">
+    <div class="account-card-title">💰 Taille du compte</div>
+    <div class="account-row">
+      <label>CAPITAL</label>
+      <input type="number" id="exness-account" placeholder="200" value="200" step="1" inputmode="decimal" oninput="updateExnessRisk()">
+      <span class="account-tag">USD</span>
+    </div>
+    <div class="risk-computed" id="exness-risk-display">Risque : $2.00 (1%)</div>
+  </div>
+
+  <div class="asset-selector" id="exness-asset-selector">
+    <button class="asset-btn active" data-asset="BTC" onclick="exnessSelectAsset('BTC')">
+      <div class="asset-icon btc-icon">₿</div>
+      <div class="asset-info">
+        <div class="asset-name">Bitcoin</div>
+        <div class="asset-sub">BTCUSD · lot×1</div>
+      </div>
+    </button>
+    <button class="asset-btn" data-asset="ETH" onclick="exnessSelectAsset('ETH')">
+      <div class="asset-icon eth-icon">Ξ</div>
+      <div class="asset-info">
+        <div class="asset-name">Ethereum</div>
+        <div class="asset-sub">ETHUSD · lot×1</div>
+      </div>
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Prix d'entrée</div>
+    <div class="input-group">
+      <div class="input-row">
+        <label>ENTRY</label>
+        <input type="number" id="exness-entry" placeholder="0.00" step="0.01" inputmode="decimal">
+        <span class="input-tag">USD</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Stop Loss &amp; Take Profit</div>
+    <div class="input-group">
+      <div class="sl-row">
+        <div class="input-row">
+          <label>SL</label>
+          <input type="number" id="exness-sl" placeholder="0.00" step="0.01" inputmode="decimal">
+          <span class="input-tag">USD</span>
+        </div>
+      </div>
+      <div class="tp-row">
+        <div class="input-row">
+          <label>TP</label>
+          <input type="number" id="exness-tp" placeholder="0.00" step="0.01" inputmode="decimal">
+          <span class="input-tag">USD</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="risk-bar">
+    <div class="risk-label">Risque / trade</div>
+    <div class="risk-value" id="exness-risk-bar">$2.00 <span class="exness-tag">1%</span></div>
+  </div>
+
+  <div class="error-msg" id="exness-error"></div>
+
+  <button class="calc-btn" id="exness-calc-btn" data-asset="BTC" onclick="exnessCalculate()">
+    CALCULER LE LOT
+  </button>
+
+  <button class="clear-btn" onclick="exnessClear()">✕ Effacer les champs</button>
+
+  <div class="results" id="exness-results">
+    <div class="result-main">
+      <div class="lot-label">Taille de lot recommandée</div>
+      <div class="lot-value btc" id="exness-lot-display">0.00</div>
+      <div class="lot-sub" id="exness-lot-sub">lots BTCUSD</div>
+      <div class="rr-score good" id="exness-rr-score">🟢 R:R —</div>
+    </div>
+    <div class="result-grid">
+      <div class="result-item">
+        <div class="r-label">SL Distance</div>
+        <div class="r-val neutral" id="exness-sl-dist">—</div>
+      </div>
+      <div class="result-item">
+        <div class="r-label">TP Distance</div>
+        <div class="r-val neutral" id="exness-tp-dist">—</div>
+      </div>
+      <div class="result-item">
+        <div class="r-label">Perte max</div>
+        <div class="r-val negative" id="exness-max-loss">—</div>
+      </div>
+      <div class="result-item">
+        <div class="r-label">Gain potentiel</div>
+        <div class="r-val positive" id="exness-pot-gain">—</div>
+      </div>
+      <div class="result-item">
+        <div class="r-label">Valeur / point</div>
+        <div class="r-val neutral" id="exness-pip-val">—</div>
+      </div>
+      <div class="result-item">
+        <div class="r-label">Direction</div>
+        <div class="r-val neutral" id="exness-direction">—</div>
+      </div>
+    </div>
+    <div class="impact-section">
+      <div class="impact-title">Impact compte</div>
+      <div class="impact-grid">
+        <div class="impact-item">
+          <div class="r-label">% Capital risqué</div>
+          <div class="r-val neutral" id="exness-risk-pct">—</div>
+        </div>
+        <div class="impact-item">
+          <div class="r-label">% Gain potentiel</div>
+          <div class="r-val positive" id="exness-gain-pct">—</div>
+        </div>
+        <div class="impact-item">
+          <div class="r-label">Commission</div>
+          <div class="r-val orange" id="exness-commission">—</div>
+        </div>
+        <div class="impact-item">
+          <div class="r-label">Gain net (−comm.)</div>
+          <div class="r-val positive" id="exness-net-gain">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="swap-warn" id="exness-swap-warn">
+      ⚠️ BTC swap long : <strong>-1378.3 pts/nuit</strong><br>
+      Évite le maintien overnight sur BTC Exness.
+    </div>
+    <div class="commission-info visible" id="exness-comm-info">
+      ℹ️ BTC : $2/lot · ETH : $0.5/lot (entrée + sortie)
+    </div>
+  </div>
 </div>
 
+<!-- ══════════════════════════════════════
+     TABBAR
+══════════════════════════════════════ -->
+<nav class="tabbar">
+  <button class="tab-btn active-ftmo" id="tab-ftmo" onclick="switchPage('ftmo')">
+    <span class="tab-icon">🏆</span>
+    <span class="tab-label">FTMO 10K</span>
+  </button>
+  <button class="tab-btn" id="tab-exness" onclick="switchPage('exness')">
+    <span class="tab-icon">⚡</span>
+    <span class="tab-label">Exness</span>
+  </button>
+</nav>
+
 <script>
-  const ASSETS = {
-    BTC: { contractSize: 1,   label: 'BTCUSD', color: 'btc' },
-    ETH: { contractSize: 10,  label: 'ETHUSD', color: 'eth' },
-    XAU: { contractSize: 100, label: 'XAUUSD', color: 'xau' }
-  };
-  const ASSET_KEYS = ['BTC', 'ETH', 'XAU'];
-  const RISK = 80;
-  let currentIndex = 0;
-  let currentAsset = 'BTC';
-  let isDark = false;
+/* ══════════════════════════════════════
+   CONFIG
+══════════════════════════════════════ */
+const FTMO_ASSETS = {
+  BTC: { contractSize: 1,  label: 'BTCUSD', color: 'btc', minLot: 0.01 },
+  ETH: { contractSize: 10, label: 'ETHUSD', color: 'eth', minLot: 0.01 }
+};
+const EXNESS_ASSETS = {
+  BTC: { contractSize: 1, label: 'BTCUSD', color: 'btc', minLot: 0.01, commission: 2   },
+  ETH: { contractSize: 1, label: 'ETHUSD', color: 'eth', minLot: 0.1,  commission: 0.5 }
+};
+const FTMO_RISK     = 80;
+const FTMO_ACCOUNT  = 10000;
+const EXNESS_RISK_PCT = 0.01;
 
-  // Restore saved preference
-  const saved = localStorage.getItem('ftmo-theme');
-  if (saved === 'dark') {
-    isDark = true;
-    document.documentElement.setAttribute('data-theme', 'dark');
+let ftmoAsset   = 'BTC';
+let exnessAsset = 'BTC';
+let isDark      = false;
+let currentPage = 'ftmo';
+
+/* ── THEME ── */
+const saved = localStorage.getItem('calc-theme');
+if (saved === 'dark') { isDark = true; document.documentElement.setAttribute('data-theme', 'dark'); }
+
+function toggleTheme() {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  localStorage.setItem('calc-theme', isDark ? 'dark' : 'light');
+}
+
+/* ── PAGE SWITCH ── */
+function switchPage(page) {
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+
+  document.getElementById('tab-ftmo').className   = 'tab-btn' + (page === 'ftmo'   ? ' active-ftmo'   : '');
+  document.getElementById('tab-exness').className = 'tab-btn' + (page === 'exness' ? ' active-exness' : '');
+
+  // scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ── R:R BADGE ── */
+function rrClass(rr) {
+  if (rr < 1.5) return { cls: 'bad',    emoji: '🔴' };
+  if (rr < 2.5) return { cls: 'medium', emoji: '🟡' };
+  return               { cls: 'good',   emoji: '🟢' };
+}
+
+/* ══════════════════════════════════════
+   FTMO PAGE
+══════════════════════════════════════ */
+function ftmoSelectAsset(asset, swipeDir) {
+  if (asset === ftmoAsset) return;
+  ftmoAsset = asset;
+  document.querySelectorAll('#ftmo-asset-selector .asset-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.asset === asset));
+  document.getElementById('ftmo-calc-btn').dataset.asset = asset;
+  document.getElementById('ftmo-results').classList.remove('visible');
+  document.getElementById('ftmo-error').classList.remove('visible');
+  if (swipeDir) animateSelector('ftmo-asset-selector', swipeDir);
+}
+
+function ftmoCalculate() {
+  const errEl = document.getElementById('ftmo-error');
+  errEl.classList.remove('visible');
+
+  const entry = parseFloat(document.getElementById('ftmo-entry').value);
+  const sl    = parseFloat(document.getElementById('ftmo-sl').value);
+  const tp    = parseFloat(document.getElementById('ftmo-tp').value);
+
+  if (!entry || !sl || !tp)             { showErr(errEl, 'Veuillez remplir tous les champs.'); return; }
+  if (entry <= 0 || sl <= 0 || tp <= 0) { showErr(errEl, 'Les prix doivent être > 0.'); return; }
+  if (sl === entry) { showErr(errEl, "SL ≠ prix d'entrée."); return; }
+  if (tp === entry) { showErr(errEl, "TP ≠ prix d'entrée."); return; }
+
+  const asset  = FTMO_ASSETS[ftmoAsset];
+  const isLong = tp > entry;
+
+  if ( isLong && sl >= entry) { showErr(errEl, "LONG : SL doit être sous l'entrée."); return; }
+  if (!isLong && sl <= entry) { showErr(errEl, "SHORT : SL doit être au-dessus de l'entrée."); return; }
+  if ( isLong && tp <= entry) { showErr(errEl, "LONG : TP doit être au-dessus de l'entrée."); return; }
+  if (!isLong && tp >= entry) { showErr(errEl, "SHORT : TP doit être sous l'entrée."); return; }
+
+  const slDist = Math.abs(entry - sl);
+  const tpDist = Math.abs(tp - entry);
+  const lotRaw = FTMO_RISK / (slDist * asset.contractSize);
+  const lot    = Math.floor(lotRaw / 0.01) * 0.01;
+
+  if (lot < asset.minLot) { showErr(errEl, `Lot (${lotRaw.toFixed(4)}) < ${asset.minLot} minimum. Élargis le SL.`); return; }
+
+  const actualLoss = lot * slDist * asset.contractSize;
+  const potGain    = lot * tpDist * asset.contractSize;
+  const pipVal     = lot * asset.contractSize;
+  const rr         = tpDist / slDist;
+  const rrInfo     = rrClass(rr);
+
+  setText('ftmo-lot-display', lot.toFixed(2));
+  document.getElementById('ftmo-lot-display').className = `lot-value ${asset.color}`;
+  setText('ftmo-lot-sub',    `lots ${asset.label}`);
+  setRR('ftmo-rr-score', rrInfo, rr);
+  setText('ftmo-sl-dist',    `${slDist.toFixed(2)} pts`);
+  setText('ftmo-tp-dist',    `${tpDist.toFixed(2)} pts`);
+  setText('ftmo-max-loss',   `-$${actualLoss.toFixed(2)}`);
+  setText('ftmo-pot-gain',   `+$${potGain.toFixed(2)}`);
+  setText('ftmo-pip-val',    `$${pipVal.toFixed(2)}/pt`);
+  setText('ftmo-direction',  isLong ? '📈 LONG' : '📉 SHORT');
+  setText('ftmo-risk-pct',   `${(actualLoss / FTMO_ACCOUNT * 100).toFixed(2)}%`);
+  setText('ftmo-gain-pct',   `+${(potGain / FTMO_ACCOUNT * 100).toFixed(2)}%`);
+
+  document.getElementById('ftmo-swap-warn').classList.toggle('visible', ftmoAsset === 'ETH');
+  showResults('ftmo-results');
+}
+
+/* Swipe FTMO */
+setupSwipe('page-ftmo', (dir) => {
+  const list = ['BTC','ETH'];
+  const idx = list.indexOf(ftmoAsset);
+  if (dir === 'left'  && idx < list.length - 1) ftmoSelectAsset(list[idx+1], 'left');
+  if (dir === 'right' && idx > 0)               ftmoSelectAsset(list[idx-1], 'right');
+});
+
+/* ══════════════════════════════════════
+   EXNESS PAGE
+══════════════════════════════════════ */
+function getExnessRisk() {
+  const acc = parseFloat(document.getElementById('exness-account').value) || 0;
+  return acc * EXNESS_RISK_PCT;
+}
+
+function updateExnessRisk() {
+  const risk = getExnessRisk();
+  const acc  = parseFloat(document.getElementById('exness-account').value) || 0;
+  document.getElementById('exness-risk-display').textContent = `Risque : $${risk.toFixed(2)} (1%)`;
+  document.getElementById('exness-risk-bar').innerHTML = `$${risk.toFixed(2)} <span class="exness-tag">1%</span>`;
+  // clear results on account change
+  document.getElementById('exness-results').classList.remove('visible');
+}
+
+function exnessSelectAsset(asset, swipeDir) {
+  if (asset === exnessAsset) return;
+  exnessAsset = asset;
+  document.querySelectorAll('#exness-asset-selector .asset-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.asset === asset));
+  document.getElementById('exness-calc-btn').dataset.asset = asset;
+  document.getElementById('exness-results').classList.remove('visible');
+  document.getElementById('exness-error').classList.remove('visible');
+  if (swipeDir) animateSelector('exness-asset-selector', swipeDir);
+}
+
+function exnessCalculate() {
+  const errEl = document.getElementById('exness-error');
+  errEl.classList.remove('visible');
+
+  const acc   = parseFloat(document.getElementById('exness-account').value);
+  const entry = parseFloat(document.getElementById('exness-entry').value);
+  const sl    = parseFloat(document.getElementById('exness-sl').value);
+  const tp    = parseFloat(document.getElementById('exness-tp').value);
+
+  if (!acc || acc <= 0) { showErr(errEl, 'Entrez la taille de votre compte.'); return; }
+  if (!entry || !sl || !tp) { showErr(errEl, 'Veuillez remplir tous les champs.'); return; }
+  if (entry <= 0 || sl <= 0 || tp <= 0) { showErr(errEl, 'Les prix doivent être > 0.'); return; }
+  if (sl === entry) { showErr(errEl, "SL ≠ prix d'entrée."); return; }
+  if (tp === entry) { showErr(errEl, "TP ≠ prix d'entrée."); return; }
+
+  const asset  = EXNESS_ASSETS[exnessAsset];
+  const isLong = tp > entry;
+  const risk   = acc * EXNESS_RISK_PCT;
+
+  if ( isLong && sl >= entry) { showErr(errEl, "LONG : SL doit être sous l'entrée."); return; }
+  if (!isLong && sl <= entry) { showErr(errEl, "SHORT : SL doit être au-dessus de l'entrée."); return; }
+  if ( isLong && tp <= entry) { showErr(errEl, "LONG : TP doit être au-dessus de l'entrée."); return; }
+  if (!isLong && tp >= entry) { showErr(errEl, "SHORT : TP doit être sous l'entrée."); return; }
+
+  const slDist = Math.abs(entry - sl);
+  const tpDist = Math.abs(tp - entry);
+  const lotRaw = risk / (slDist * asset.contractSize);
+  // round DOWN to nearest valid step
+  const step   = asset.minLot;
+  const lot    = Math.floor(lotRaw / step) * step;
+
+  if (lot < asset.minLot) {
+    showErr(errEl, `Lot (${lotRaw.toFixed(4)}) < ${asset.minLot} minimum. Élargis le SL ou augmente le capital.`);
+    return;
   }
 
-  function toggleTheme() {
-    isDark = !isDark;
-    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-    localStorage.setItem('ftmo-theme', isDark ? 'dark' : 'light');
-  }
+  const actualLoss  = lot * slDist * asset.contractSize;
+  const potGain     = lot * tpDist * asset.contractSize;
+  const pipVal      = lot * asset.contractSize;
+  const commission  = lot * asset.commission * 2; // entry + exit
+  const netGain     = potGain - commission;
+  const rr          = tpDist / slDist;
+  const rrInfo      = rrClass(rr);
 
-  function selectAsset(idx) {
-    currentIndex = idx;
-    currentAsset = ASSET_KEYS[idx];
+  setText('exness-lot-display', lot.toFixed(2));
+  document.getElementById('exness-lot-display').className = `lot-value ${asset.color}`;
+  setText('exness-lot-sub',    `lots ${asset.label}`);
+  setRR('exness-rr-score', rrInfo, rr);
+  setText('exness-sl-dist',    `${slDist.toFixed(2)} pts`);
+  setText('exness-tp-dist',    `${tpDist.toFixed(2)} pts`);
+  setText('exness-max-loss',   `-$${actualLoss.toFixed(2)}`);
+  setText('exness-pot-gain',   `+$${potGain.toFixed(2)}`);
+  setText('exness-pip-val',    `$${pipVal.toFixed(2)}/pt`);
+  setText('exness-direction',  isLong ? '📈 LONG' : '📉 SHORT');
+  setText('exness-risk-pct',   `${(actualLoss / acc * 100).toFixed(2)}%`);
+  setText('exness-gain-pct',   `+${(potGain / acc * 100).toFixed(2)}%`);
+  setText('exness-commission', `-$${commission.toFixed(2)}`);
+  setText('exness-net-gain',   `+$${netGain.toFixed(2)}`);
 
-    // Slide pager
-    document.getElementById('pagerTrack').style.transform = `translateX(-${idx * 100}%)`;
+  // Swap warning: BTC only on Exness (massive swap)
+  document.getElementById('exness-swap-warn').classList.toggle('visible', exnessAsset === 'BTC');
+  showResults('exness-results');
+}
 
-    // Update card active states
-    document.querySelectorAll('.asset-card').forEach((c, i) =>
-      c.classList.toggle('active', i === idx));
+/* Swipe Exness */
+setupSwipe('page-exness', (dir) => {
+  const list = ['BTC','ETH'];
+  const idx = list.indexOf(exnessAsset);
+  if (dir === 'left'  && idx < list.length - 1) exnessSelectAsset(list[idx+1], 'left');
+  if (dir === 'right' && idx > 0)               exnessSelectAsset(list[idx-1], 'right');
+});
 
-    // Update dots
-    document.querySelectorAll('.dot').forEach((d, i) =>
-      d.classList.toggle('active', i === idx));
+/* ══════════════════════════════════════
+   CLEAR FUNCTIONS
+══════════════════════════════════════ */
+function ftmoClear() {
+  ['ftmo-entry','ftmo-sl','ftmo-tp'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ftmo-results').classList.remove('visible');
+  document.getElementById('ftmo-error').classList.remove('visible');
+  document.getElementById('ftmo-entry').focus();
+}
 
-    // Update calc button
-    document.getElementById('calcBtn').dataset.asset = currentAsset;
+function exnessClear() {
+  ['exness-entry','exness-sl','exness-tp'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('exness-results').classList.remove('visible');
+  document.getElementById('exness-error').classList.remove('visible');
+  document.getElementById('exness-entry').focus();
+}
 
-    // Reset results
-    document.getElementById('results').classList.remove('visible');
-    document.getElementById('errorMsg').classList.remove('visible');
-  }
+/* ══════════════════════════════════════
+   HELPERS
+══════════════════════════════════════ */
+function setText(id, val) { document.getElementById(id).textContent = val; }
 
-  // ── SWIPE SUPPORT ──
-  let touchStartX = 0;
-  let touchStartY = 0;
-  const pagerOuter = document.querySelector('.pager-track-outer');
+function setRR(id, info, rr) {
+  const el = document.getElementById(id);
+  el.textContent = `${info.emoji} R:R  1 : ${rr.toFixed(2)}`;
+  el.className   = `rr-score ${info.cls}`;
+}
 
-  pagerOuter.addEventListener('touchstart', e => {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
+function showErr(el, msg) {
+  el.textContent = msg;
+  el.classList.add('visible');
+  // hide associated results
+  const page = el.id.split('-')[0];
+  document.getElementById(page + '-results').classList.remove('visible');
+}
+
+function showResults(id) {
+  const el = document.getElementById(id);
+  el.classList.add('visible');
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function animateSelector(id, dir) {
+  const el = document.getElementById(id);
+  el.classList.remove('swipe-left', 'swipe-right');
+  void el.offsetWidth;
+  el.classList.add(dir === 'left' ? 'swipe-left' : 'swipe-right');
+}
+
+function setupSwipe(pageId, callback) {
+  let startX = 0, startY = 0;
+  const el = document.getElementById(pageId);
+  el.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
   }, { passive: true });
-
-  pagerOuter.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    const dy = e.changedTouches[0].clientY - touchStartY;
-    if (Math.abs(dx) < Math.abs(dy) || Math.abs(dx) < 40) return; // vertical or tiny swipe — ignore
-    if (dx < 0 && currentIndex < 2) selectAsset(currentIndex + 1);
-    if (dx > 0 && currentIndex > 0) selectAsset(currentIndex - 1);
+  el.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
+    callback(dx < 0 ? 'left' : 'right');
   }, { passive: true });
+}
 
-  function showError(msg) {
-    const el = document.getElementById('errorMsg');
-    el.textContent = msg;
-    el.classList.add('visible');
-    document.getElementById('results').classList.remove('visible');
-  }
+/* Init Exness risk display */
+updateExnessRisk();
 
-  function calculate() {
-    document.getElementById('errorMsg').classList.remove('visible');
-
-    const entry = parseFloat(document.getElementById('entry').value);
-    const sl    = parseFloat(document.getElementById('sl').value);
-    const tp    = parseFloat(document.getElementById('tp').value);
-
-    if (!entry || !sl || !tp)             { showError('Veuillez remplir tous les champs.'); return; }
-    if (entry <= 0 || sl <= 0 || tp <= 0) { showError('Les prix doivent être > 0.'); return; }
-    if (sl === entry) { showError("Le SL ne peut pas être égal au prix d'entrée."); return; }
-    if (tp === entry) { showError("Le TP ne peut pas être égal au prix d'entrée."); return; }
-
-    const asset  = ASSETS[currentAsset];
-    const isLong = tp > entry;
-
-    if ( isLong && sl >= entry) { showError("LONG : SL doit être sous le prix d'entrée."); return; }
-    if (!isLong && sl <= entry) { showError("SHORT : SL doit être au-dessus du prix d'entrée."); return; }
-    if ( isLong && tp <= entry) { showError("LONG : TP doit être au-dessus du prix d'entrée."); return; }
-    if (!isLong && tp >= entry) { showError("SHORT : TP doit être sous le prix d'entrée."); return; }
-
-    const slDist = Math.abs(entry - sl);
-    const tpDist = Math.abs(tp - entry);
-    const lotRaw = RISK / (slDist * asset.contractSize);
-    const lot    = Math.floor(lotRaw / 0.01) * 0.01;
-
-    if (lot < 0.01) {
-      showError(`Lot calculé (${lotRaw.toFixed(4)}) < 0.01 minimum. Élargis ton SL.`);
-      return;
-    }
-
-    const actualLoss = lot * slDist * asset.contractSize;
-    const potGain    = lot * tpDist * asset.contractSize;
-    const pipVal     = lot * asset.contractSize;
-    const rr         = (tpDist / slDist).toFixed(2);
-
-    document.getElementById('lotDisplay').textContent = lot.toFixed(2);
-    document.getElementById('lotDisplay').className   = `lot-value ${asset.color}`;
-    document.getElementById('lotSub').textContent     = `lots ${asset.label}`;
-    document.getElementById('rrBadge').textContent    = `R:R  1 : ${rr}`;
-    document.getElementById('slPips').textContent     = `${slDist.toFixed(2)} pts`;
-    document.getElementById('tpPips').textContent     = `${tpDist.toFixed(2)} pts`;
-    document.getElementById('maxLoss').textContent    = `-$${actualLoss.toFixed(2)}`;
-    document.getElementById('potGain').textContent    = `+$${potGain.toFixed(2)}`;
-    document.getElementById('pipVal').textContent     = `$${pipVal.toFixed(2)}/pt`;
-    document.getElementById('direction').textContent  = isLong ? '📈 LONG' : '📉 SHORT';
-
-    document.getElementById('swapWarn').classList.toggle('visible', currentAsset === 'ETH');
-    document.getElementById('swapWarnXau').classList.toggle('visible', currentAsset === 'XAU');
-    document.getElementById('results').classList.add('visible');
-    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-
-  document.addEventListener('keydown', e => { if (e.key === 'Enter') calculate(); });
+/* Enter key */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (currentPage === 'ftmo')   ftmoCalculate();
+  if (currentPage === 'exness') exnessCalculate();
+});
 </script>
 </body>
 </html>
